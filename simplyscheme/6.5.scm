@@ -1,0 +1,11 @@
+(define (european-time sent)
+  (cond ((= (first sent) 12) (if (equal? (last sent) 'am) 24 12))
+	((equal? (last sent) 'pm) (+ (first sent) 12))
+	(else (first sent))))
+
+(define (american-time time)
+  (cond ((= time 0) '(12 am))
+	((= time 24) '(12 am))
+	((< time 12) (se time 'am))
+	((> time 12) (se (- time 12) 'pm))
+	(else '(12 pm))))
