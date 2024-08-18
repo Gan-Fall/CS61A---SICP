@@ -1,0 +1,7 @@
+(define (number-of-partitions n)
+  (define (helper a i)
+    (cond ((= 0 a) 1)
+          ((or (< a 0) (= i 0)) 0)
+          (else (+ ( helper a (- i 1))
+                   ( helper ( - a i) i)))))
+  (helper n n))

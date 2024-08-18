@@ -1,0 +1,7 @@
+(define (number-of-partitions n)
+  (define (helper a i result)
+    (cond ((= 0 a) (result 1))
+          ((or (< a 0) (= i 0)) (result 0))
+          (else (+ ( helper a (- i 1) result)
+                   ( helper ( - a i) i result)))))
+  (helper n n (lambda (result) result)))
