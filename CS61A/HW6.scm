@@ -1,0 +1,11 @@
+(define let-exp? (exp-checker 'let))
+(define (let-names exp)
+  (car (cadr exp)))
+(define (let-values exp)
+  (cadr (cadr exp)))
+(define (let-body exp)
+  (caddr exp))
+
+(define (eval-let exp)
+  (eval-1 (cons (list 'lambda (let-names exp) (let-body exp))
+                (let-values exp))))
