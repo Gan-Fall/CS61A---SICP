@@ -1,0 +1,5 @@
+(define-class (person name)
+  (instance-vars (repeat '()))
+  (method (say stuff) (set! repeat stuff) stuff)
+  (method (ask stuff) (set! repeat (se '(would you please) stuff)) (ask self 'say (se '(would you please) stuff)))
+  (method (greet) (set! repeat (se '(hello my name is) name)) (ask self 'say (se '(hello my name is) name))) )
