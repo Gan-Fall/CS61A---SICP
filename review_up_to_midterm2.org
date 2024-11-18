@@ -1,0 +1,561 @@
+#+title: Review Up To Midterm 2
+#+author: Alejandro Hernandez Cruz
+
+* HIERARCHICAL STRUCTURES
+
+There are 4 types of tree data structures used throughout the course:
+- Uppercase T Trees (1 datum, variable children)
+- Binary trees (Abstract data type, 2 children)
+- Deeplists (Just pairs i.e. only leaves have datums, variable children)
+- Sequences (CAR/CDR pairs, 2 children)
+
+A given hint for dealing with trees in homework and midterms is: Binary trees
+can be empty, Trees cannot.
+
+A forest is a list of (possibly disconnected) trees. This is important later.
+e.g.
+
+               (5)
+              / | \
+             /  |  \
+            /   |   \
+           /    |    \
+       ( child ... childn ) <---Forest
+           ^          ^
+        tree/node  tree/node
+
+#+BEGIN_SRC scheme
+(5 . (child1..childn))
+#+END_SRC
+
+If you call CDR on this, the list you get is a forest.
+
+A key idea for understanding traversal and recursion through trees is
+understanding the difference between a Tree and a Node: There is none.
+A tree simply encapsulates the entire big picture we're looking at.
+
+Another key idea is that you will generally see two recursive calls, which
+happen simultaneously, in a tree structure. For example, in the count-change
+example in the textbook, there is the following code snippet:
+
+#+BEGIN_SRC scheme
+        ((+ (cc amount (- kinds-of-coins 1))
+            (cc (- amount (first-denomination
+                           kinds-of-coins))
+                kinds-of-coins)))))
+#+END_SRC
+
+Here the cc function is called twice inside its own body, and if you map out
+how the process evolves you will see a branching "control" structure as well.
+Notice that there isn't any actual tree data structure in the count-change
+example however. In the Scheme-1 interpreter (or really any interpreter for
+that matter) there is also no tree data structure but it evolves with a tree
+control structure.
+
+* CONVENTIONAL INTERFACES (AND CASCADING/PIPPING)
+
+Handling data when it is in a tree structure is quite difficult. This can be
+fixed by using *conventional interfaces*, a concept where you malleate data
+into a form that is easier to work with for your needs. For example, say you
+want to get the sum of squares of the odd datums in the following deep-list
+tree:
+
+#+BEGIN_SRC scheme
+'(3 (4 (5 ((6) 7) 8) (9 10)))
+#+END_SRC
+
+An easy way is to run accumulate on a list of the odd leaves:
+
+#+BEGIN_SRC scheme
+(accumulate + 0 '(map square '(3 5 7 9)))
+#+END_SRC
+
+In other words, the sequence or list you convert the tree into is the
+conventional interface. The technique the book uses to convert the tree is
+cascading, or more familiar to UNIX users, pipping.
+
+enumerate-tree-leaves -> odd? -> map square -> accumulate + 0
+
+Here the data is malleated into a form the next step can use by each preceding
+step. First enumerate the leaves and turn them into a one dimensional list,
+then filter for odd numbers. Lastly square them all then accumulate.
+
+This is closely tied to the "Domain and Range" concept. For example, imagine
+you want to make a function that filters the following tree:
+
+(datum-filter even?    (5)     )
+                      /   \
+                    (12)  (19)
+                   / | \
+                  /  |  \
+                (4) (22) (27)
+
+Returns:
+(12 4 22)
+
+You can achieve this with the following code:
+
+#+BEGIN_SRC scheme
+(define (datum-filter pred Tree)
+   (if (pred (datum Tree))
+       (cons (datum Tree)
+             (datum-filter-forest pred (children Tree)))
+       (datum-filter-forest pred (children Tree)) ))
+
+(define (datum-filter-forest pred forest)
+   (if (null? forest)
+       '()
+       (append (datum-filter pred (car forest))
+               (datum-filter-forest pred (cdr forest)))))
+#+END_SRC
+
+This code is really easy to think about when you have domain and range in the
+forefront of your mind. datum-filter takes in a predicate and a Tree, and
+returns a list. Problem is that when you get the *children* of the current
+node it is a Forest (a list of Trees), which is not in the domain of datum-
+filter. As such you have to either create a second filter function that *does*
+have a forest in its domain, or malleate the *children* into a Tree. Here is
+that version:
+
+#+BEGIN_SRC scheme
+(define (datum-filter pred Tree)
+   (cond ((null? Tree) '())
+         ((pred? (datum Tree)) (cons (datum Tree)
+                                     (accumulate append '()
+                                        (map datum-filter (children Tree)))))
+         (else (accumulate append '() (map datum-filter (children Tree)))) ))
+#+END_SRC
+
+First you map datum-filter on all the children, remember datum-filter's range
+is a list, as such you can append the result of datum-filter on each child
+together with accumulate. Btw accumulate append '() is so common it has its
+own name: flatmap.
+
+Mind blowing concept to me but if you're an experienced programmer you likely
+already do this subconciously.
+
+* TREE TRAVERSAL (BFS, DFS, IN-ORDER, PREFIX, POSTFIX)
+
+Tree traversal is covered to death online and pretty intuitive. For now I'll
+just cover implementation of BFS and DFS.
+
+DFS is really simple, recursion as we have done so far will naturally
+traverse the tree in a DFS manner. BFS, however, requires a queue.
+
+Imagine you have a queue and a current Task. Each step is simple. Do the task
+on the current node's CAR, append the children to the queue, then dequeue the
+task that is done and set the next in queue as the task. Here is a visual
+sample with a tree of bands from the 60s. We want to print the names of the
+bands and each band member in BFS order.
+
+1. (Beatles Who Kinks)              (Beatles)
+          QUEUE                       TASK
+
+BEATLES
+
+2. (Who Kinks Ringo Paul George John)     (Who)
+                QUEUE                     TASK
+
+WHO
+
+3. (Kinks Ringo Paul George John Pete Roger Keith John)      (Kinks)
+                      QUEUE                                   TASK
+
+KINKS
+
+.
+.
+.
+and so on
+
+This also applies to interpreters as they perform operations in one of these
+orders. Imagine we want the following calculation 2 + 3 * 4.
+
+If we do it in this order.
+
+                             2nd +
+                           1st 2   12 3rd
+
+This is called in-order, and its what we're used to in normal math
+
+In Scheme, its:
+                           1st   +
+                          2nd  2   12 3rd
+
+This is pre-fix.
+Notice that each step is evaluated as either a primitive number or operation,
+or as its own node:
+                                +
+                              2   *
+                                3   4
+
+There is a third way called postfix: 2↑ 3↑ 4↑ + *
+
+                                  3rd  +
+                                 1st 2   12 2nd
+
+Here the numbers are kept in a stack, the operator is then run with the first
+two arguments that pop from the stack. Until there are no more operators and
+the stack is empty.
+
+There are many cases where you would use each order in we talked about in this
+section but covering them all would take forever. TLDR is: DFS is when you
+don't care about the order or want to group things that are related. BFS is
+good for searching a space of possibilities, e.g. a chess algorithm.
+In-Order is common in math, postfix is used by some low level calculators like
+HP calculators as it can be very fast. You're used to prefix by now.
+
+* GENERICS
+
+Computer science, as it turns out, is actually a bad name for it. Electrical
+Engineering is the study of computers. Computer Science is the study of
+working in large scale programs and large scale teams. Abstraction is our main
+tool for this course. As such you don't want to step on anyone's toes while
+doing certain things such as naming, implementing abstract data types, and
+implementing procedures.
+
+We achieve this by using generics and at a higher level, making our programs
+more modular.
+
+So what does all of this mumbling mean? We want to make **generic** procedures
+that rely on the data itself or some other structure (hint: like a table) to
+know what to do with the data it is handling. We also want to hide away how we
+define certain data types (and the low level procedures that work on them)
+into the bodies of functions or modules/packages, such that any other
+programmers in our team can define these as they like or import any
+implementations as they like.
+
+E.g.
+Say we want to implement two generic procedures: Perimeter and Area.
+We have two abstract data types: Square and Circle.
+
+|        | Perimeter | Area      |
+| Square | S -> 4S   | S -> S^2  |
+| Circle | r -> 2πr  | r -> πr^2 |
+
+There are 3 styles of implementing this:
+↓ (Columns) = Conventional, the dumb/easy way
+→ (Rows) = Message passing
+Implementing the table itself using a table = Data-directed Programming
+here is an example of each
+
+** Conventional
+#+BEGIN_SRC scheme
+(define (perimeter-square s)
+  (* 4 s))
+
+(define (perimeter-circle r)
+  (* 2 pi r))
+#+END_SRC
+** Message passing
+#+BEGIN_SRC scheme
+(define (square s)
+  (lambda (dispatch)
+    (cond ((eq? dispatch 'perimeter) (* 4 s))
+          ((eq? dispatch 'area) (* s s)))))
+
+(define s1 (square 2))
+(s1 'perimeter)
+8
+(s1 'area)
+4
+#+END_SRC
+Notice that the square here behaves like an *object*. This is why message
+passing will be so useful later for implementing Object-Oriented Programming
+
+* DATA-DIRECTED PROGRAMMING
+
+put and get place and retrieve procedures in a table respectively. These
+are indexed by *operation* and *type*
+
+#+BEGIN_SRC scheme
+(define (install-square-package)
+  ;; internal procedures
+  (define (make-square) s)
+  (define (perimeter s) (* 4 s))
+  (define (area s) (* s s))
+  ;; interface to the rest of the system
+  (define (tag x)
+    (attach-tag 'square x))
+  (put 'perimeter '(square) perimeter)
+  (put 'area '(square) area)
+  (put 'make-square 'square
+       (lambda (s)
+         (tag (make-square s))))
+  'done)
+
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+          (apply proc (map contents args))
+          (error
+            "No method for these types:
+             APPLY-GENERIC"
+            (list op type-tags))))))
+
+;We can define the global selectors using apply-generic
+(define (make-square s)
+  (apply-generic 'make-square s))
+(define (perimeter s)
+  (apply-generic 'perimeter s))
+(define (area s)
+  (apply-generic 'area s))
+#+END_SRC
+
+There is a lot to unpack here.
+*** Interfaces
+First the user cannot access the package's internal make-square, area,
+perimeter, or tag procedures. Access is given in the second half with the
+"interface" where the procedures are put into a global hash table. This
+way as many programmers as needed can define their own perimeter procedure
+and they will each be indexed under 'perimeter '(data_type) in the table
+without worrying about stomping on other's names and without anyone
+redefining their low level primitives and procedures.
+*** Inter-operability
+The data types are indexed as a list to allow something like
+'(square circle) if someone wants to add a procedure like 'add
+'(square circle) to add two data types.
+*** Maintainability
+Each style has its own pros and cons when it comes to maintaining.
+For example, in message passing its easy to add more data types, you can
+add rectangles, triangles, etc. and only need to worry about the new types
+having the procedures. If you want to add new operations, however, it gets
+a lot harder. Not only do you have to edit every previous data type with
+the new operation but it also opens you up to editing code that was
+previously working that might now error.
+
+** Hierarchy Of Types
+The book goes in-depth about the ontology of hierarchy of data types and
+how they can be implemented but it can get complicated quickly. If your
+data types can be mapped out in a linear structure or tower you're in the
+money. This lets you easily implement *coercion*.
+
+E.g.
+complex
+↑
+real
+↑
+rational
+↑
+integer
+
+*** Coercion
+Coercion is the ability to convert one type to another. For example if you
+want to multiply an integer and a real and there is no procedure under
+'mul '(integer real) or 'mul '(real integer) you can instead
+convert the integer to a real. The definition can be placed into the
+table as follows (assuming you have an int->real function):
+
+#+BEGIN_SRC scheme
+(put-coercion 'integer 'real int->real)
+#+END_SRC
+
+This way when the program can't find an add or mul or whatever between the
+two types, it will find a coercion instead.
+If you want to get sophisticated, the program can also lower the result if
+it can be lowered. E.g. 6/2 * 2/2 = 12/4 = 3, the program can
+automatically reduce the fraction to 3/1 and maybe you have any rational
+with a denominator of 1 be eligible for lowering to int.
+
+But lets take it further, if its structured like a tower you can just raise
+the value step by step until it gets to the higher of the two types.
+
+Simply save a raise (optionally also a lower) function in each data type
+package.
+
+#+BEGIN_SRC scheme
+(put 'raise 'real real->complex)
+(put 'raise 'rational rat->real)
+(put 'raise 'int int->rat)
+#+END_SRC
+
+This gets a lot more complicated and is the subject of research when
+the hierarchy is not a tower, i.e. the data types have multiple children
+and some times the children are selectable for raise in a left or right
+direction and not the other and many more headaches.
+
+I'm skipping a lot covered in the course such as Backus Nour Form and how
+data-directed programming was the advent of the preferences tab and the
+portability of software. The course is definitely worth revisiting again and
+again, but we gotta get to OOP.
+
+* OBJECT-ORIENTED PROGRAMMING (USER'S PERSPECTIVE)
+
+Honestly I was so familiar with this and so will likely be everyone who visits
+this course that I don't even know if its worth covering. So I'll try to cover
+the user experience without getting too high level.
+
+Fred is an object, more specifically an instance, of the person class.
+You can ask him to do stuff that is defined within the person class. Like
+"Pick up the can Fred". This is a very rough idea but you can model a lot of
+systems in this way. You have to imagine it as up until now we've been having
+our program behave as a single entity manipulating multiple data objects. Now
+you have to imagine ther are multiple agents that can do different things
+inside the computer. Maybe the can can do other things and its of the "thing"
+class.
+
+These objects have a "state" and we define being stateful as being aware
+or recording the past and having their behavior be influenced by it.
+For example a bank account object has a internal "balance" *local state
+variable*. This variable keeps track of how much money is in the account so
+if you withdraw you'll get an answer in line with what you withdrew before:
+
+#+BEGIN_SRC scheme
+(withdraw peter-account 25)
+50
+(withdraw peter-account 25)
+25
+(withdraw peter-account 50)
+INSUFFICIENT FUNDS
+#+END_SRC
+
+This is unexpected compared to everything so far, where given the same
+arguments our procedure returned the same value. We will talk more about this
+and its implications after the next midterm.
+
+An important point is these objects have to be *instantiated*
+
+** Inheritance
+A class can also have a parent class or superclass, where it inherits
+its methods and local state variables. This child class, however, doesn't
+have direct access to these so it must instead ask a pointer pointing to
+itself. Usually appropriately referred to as *self*.
+
+E.g. in a checking-account child of the bank-account class
+#+BEGIN_SRC scheme
+(ask self 'balance)
+#+END_SRC
+
+This will ask the checking-account child instance for balance, it will not
+find it and then proceed to ask the parent which will then return balance.
+
++--------------+              +------------------+
+| Bank-account | <---------- | Checking-account  |
+| balance      |             | Checking-withdraw |
+| withdraw     |          __ |__self             |
++--------------+          |  +-------------------+
+                          |____↑
+
+obj.scm specific but *usual* will go straight to the parent.
+
+There are three kind of local state variables:
+- Instantiation variables
+  - These are usually parameters in the constructor or given in some way
+    at the instantiation of the object.
+- Instantiation variables that are pre-defined in the class body
+- Class variable, a variable that is global to all objects of the class.
+  - E.g. A global list of all objects of the person class, everytime a person
+    object is instantiated it adds itself to this list
+
+** State of OOP and Taking your OOP to the next level
+Now every programmer who has done OOP knows inheritance can be a massive
+headache. You might have noticed that in the obj.scm version of OOP, every
+state variable can be viewed by any child. This was a pedagogical choice,
+but they cannot be edited. This varies by language.
+
+To really get good at OOP, you have to exert control over your inheritance
+and be very deliberate in which functions get called, or inherited. Where
+it truly gets hard is with multiple inheritance but that was not covered
+extensively for now. When a class has two parents, the primary parent's
+methods, (btw I forgot that procedures in a class were called methods),
+as well as the primary parent's ancestors are preferred over the secondary
+parent. E.g.
+
+#+BEGIN_SRC scheme
+(define-class (worker)
+  (instance-vars (hunger 0))
+  (class-vars (work-done 0))
+  (method (work)
+          (set! hunger (1+ hunger))
+          (set! work-done (1+ work-done))
+          'whistle-while-you-work ))
+
+(define-class (TA)
+  (parent (worker))
+  (method (work)
+          (usual 'work) ;use usual to avoid infinite loop
+          '(Let me help you with that box and pointer diagram))
+  (method (grade-exam) 'A+) )
+
+(define-class (singer)
+  (parent (worker))
+  (method (sing) '(tra-la-la)) )
+
+(define-class (singer-TA)
+  (parent (singer) (TA)) )
+(define-class (TA-singer)
+  (parent (TA) (singer)) )
+
+> (define Matt (instantiate singer-TA))
+> (define Chris (instantiate TA-singer))
+> (ask Matt 'grade-exam)
+A+
+> (ask Matt 'sing)
+(TRA-LA-LA)
+> (ask Matt 'work)
+WHISTLE-WHILE-YOU-WORK
+> (ask Chris 'work)
+(LET ME HELP YOU WITH THAT BOX AND POINTER DIAGRAM)
+#+END_SRC
+
+Here you see Matt is a Singer first, TA second, therefore when asked
+to work the worker method is the one returned. "WHISTLE WHILE YOU WORK"
+Chris is TA first, Singer second, therefore when asked to work the TA method
+is the one returned: "LET ME HELP YOU WITH THAT BOX AND POINTER DIAGRAM"
+
+Inversly, and this applies to non-multiple inheritance too, a parent can
+end up calling a child's method with self. E.g.
+
+#+BEGIN_SRC scheme
+(define-class (person name)
+  (method (say stuff) stuff)
+  (method (ask stuff) (ask self 'say (se '(would you please) stuff)))
+  (method (greet) (ask self 'say (se '(hello my name is) name))) )
+
+(define-class (pigger name)
+  (parent (person name))
+  (method (pigl wd)
+          (if (member? (first wd) '(a e i o u))
+              (word wd 'ay)
+              (ask self 'pigl (word (bf wd) (first wd))) ))
+  (method (say stuff)
+          (if (word? stuff)
+              (if (equal? stuff 'my) (usual 'say stuff) (ask self 'pigl stuff))
+              (map (lambda (w) (ask self 'say w)) stuff))) )
+
+>(define pp (instantiate pigger 'porky))
+pp
+>(ask pp 'greet)
+(ellohay my amenay isay orkypay)
+#+END_SRC
+
+Here the person class calls self to use the method say but since pigger has
+its own say method as well, the parent's method ends up invoking the child's
+method.
+
+In obj.scm there are two clauses *default-method* and *initialize* which
+run when there is no matching method and when the object is initialized
+respectively. It is bad practice to have both a parent class and a default
+method as the default behavior of a child/subclass is to ask the parent
+the methods it doesn't know, it could work if the parent is asked first
+*then* them default-method is called but if you're doing this you're likely
+approaching the problem wrong to begin with. The *parent* class in reality
+instantiates an object of the parent class within the child sublcass with
+the parameters given.
+
+Btw if the parent and child both have an initialize clause, the parent goes
+first.
+
+There is a nice lecture on OOP by Daniel Ingalls, who worked to develop
+smalltalk with Alan Kay. At the end he discusses smalltalk features and
+points out that C isn't OOP at all (at least as of spring 2011):
+
+|                         | Smalltalk | C/C++       | Java  | Obj.scm | JS    | Ruby |
+| Closures (λ)            | ✓        | X (Planned) | kinda | ✓      | ✓    | ✓   |
+| Everything is an object | ✓        | X           | X     | X       | kinda | ✓   |
+| Garbage Collection      | ✓        | X           | ✓    | ✓      | ✓    | ✓   |
+|                         |           |             |       |         |       |      |
+
+Rows 1 and 3 are equivalents to "First-class procedures" and "Automatic
+memory allocation" respectively.

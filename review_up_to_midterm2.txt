@@ -1,0 +1,36 @@
+HIERARCHICAL STRUCTURES
+
+There are 4 types of tree data structures used throughout the course:
+-Uppercase T Trees (1 datum, variable children)
+-Binary trees (Abstract data type, 2 children)
+-Deeplists (Just pairs i.e. only leaves have datums, variable children)
+-Sequences (CAR/CDR pairs, 2 children)
+
+A given hint for dealing with trees in homework and midterms is: Binary trees
+can be empty, Trees cannot.
+
+A key idea for understanding traversal and recursion through trees is
+understanding the difference between a Tree and a Node: There is none.
+A tree simply encapsulates the entire big picture we're looking at.
+
+Another key idea is that you will generally see two recursive calls, which
+happen simultaneously, in a tree structure. For example, in the count-change
+example in the textbook, there is the following code snippet:
+
+        ((+ (cc amount (- kinds-of-coins 1))
+            (cc (- amount (first-denomination 
+                           kinds-of-coins))
+                kinds-of-coins)))))
+
+Here the cc function is called twice inside its own body, and if you map out
+how the process evolves you will see a branching "control" structure as well.
+Notice that there isn't any actual tree data structure in the count-change
+example however. In the Scheme-1 interpreter (or really any interpreter for
+that matter) there is also no tree data structure but it evolves with a tree
+control structure.
+
+CONVENTIONAL INTERFACES (AND CASCADING/PIPPING)
+TREE TRAVERSAL (BFS, DFS, IN-ORDER, PREFIX, POSTFIX)
+GENERICS
+DATA-DIRECTED PROGRAMMING
+OBJECT-ORIENTED PROGRAMMING (USER'S PERSPECTIVE)
