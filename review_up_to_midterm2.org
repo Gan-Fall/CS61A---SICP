@@ -250,9 +250,10 @@ here is an example of each
 ** Message passing
 #+BEGIN_SRC scheme
 (define (square s)
-  (lambda (dispatch)
+  (define (dispatch m)
     (cond ((eq? dispatch 'perimeter) (* 4 s))
-          ((eq? dispatch 'area) (* s s)))))
+          ((eq? dispatch 'area) (* s s))))
+  dispatch)
 
 (define s1 (square 2))
 (s1 'perimeter)
@@ -555,7 +556,6 @@ points out that C isn't OOP at all (at least as of spring 2011):
 | Closures (λ)            | ✓        | X (Planned) | kinda | ✓      | ✓    | ✓   |
 | Everything is an object | ✓        | X           | X     | X       | kinda | ✓   |
 | Garbage Collection      | ✓        | X           | ✓    | ✓      | ✓    | ✓   |
-|                         |           |             |       |         |       |      |
 
 Rows 1 and 3 are equivalents to "First-class procedures" and "Automatic
 memory allocation" respectively.
