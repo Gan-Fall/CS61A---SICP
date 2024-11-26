@@ -1,0 +1,42 @@
+#+title: P3 - Exercise 2
+
+* 2A
+This will be the dispatch procedure of the object Brian.
+* 2B
+- place
+- name
+- directions-and-neighbors
+- things
+- people
+- entry-procs
+- exit-procs
+- type
+- neighbors
+- exits
+- look-in
+- appear
+- enter
+- gone
+- exit
+- new-neighbor
+- add-entry-procedure
+- add-exit-procedure
+- remove-entry-procedure
+- remove-exit-procedure
+- clear-all-procs
+* 2C
+>(ask Brian 'place)
+This will return the dispatch procedure of the Peoples-park object.
+>(let ((where (ask Brian 'place)))
+    (ask where 'name))
+This will return the name instance variable of Peoples-park object: PEOPLES PARK.
+
+>(ask Peoples-park 'appear bagel)
+This will give an error as the Peoples-park symbol was never bound to an object
+* 2D
+The prompts will give: True, False, True.
+
+(ask 61a-lab 'appear computer) is the correct one, this is cause you are directly using the object procedure which is what
+the appear method in the place class takes as a formal parameter.
+
+(computer 'name) will return the word 'Durer. This is what this instance of Thing was passed as the formal parameter name.
