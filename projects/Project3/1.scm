@@ -25,18 +25,7 @@
 (ask Alejandro 'go 'up)
 (ask Alejandro 'go 'west)
 
-;METHOD 1: Set down potstickers manually
 (ask Alejandro 'lose potstickers)
-(ask BH-Office 'appear potstickers)
-
-;METHOD 2: Define a put-down procedure
-(define (put-down person thing)
-  (let ((place (ask person 'place)))
-    (begin (ask person 'lose thing)
-           (ask place 'appear thing)
-           'PLACED )))
-(put-down Alejandro potstickers)
-
 (ask Brian 'take potstickers)
 
 ;Go to CS61A lab
