@@ -16,6 +16,7 @@
 (ask Alejandro 'go 'north)
 (ask Alejandro 'go 'north)
 (ask Alejandro 'go 'north)
+(ask Alejandro 'go 'north)
 
 (ask Alejandro 'take potstickers)
 

@@ -22,7 +22,7 @@
 (can-go art-gallery 'west BH-Office)
 (can-go BH-Office 'east art-gallery)
 (can-go art-gallery 'east MJC-Office)
-(can-go MJC-office 'west art-gallery)
+(can-go MJC-Office 'west art-gallery)
 (can-go Soda 'south Pimentel)
 (can-go Pimentel 'north Soda)
 (can-go Pimentel 'south 61A-Lab)
@@ -45,8 +45,8 @@
 ; -- Ryan Stejskal
 
 (define Brian (instantiate person 'Brian BH-Office))
-(define hacker (instantiate person 'hacker 61A-lab))
-(define nasty (instantiate thief 'nasty sproul-plaza))
+(define hacker (instantiate person 'hacker 61A-Lab))
+(define nasty (instantiate thief 'nasty Sproul-Plaza))
 
 (define (sproul-hall-exit)
    (error "You can check out any time you'd like, but you can never leave"))
