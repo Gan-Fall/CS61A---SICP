@@ -48,8 +48,49 @@
 (define hacker (instantiate person 'hacker 61A-Lab))
 (define nasty (instantiate thief 'nasty Sproul-Plaza))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; EXERCISE 3A
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;original
 (define (sproul-hall-exit)
    (error "You can check out any time you'd like, but you can never leave"))
+
+;Infinite loops, for studying purposes
+(define (sproul-hall-exit)
+  (let ((calls 0))
+    (begin (set! calls (+ calls 1))
+           (if (< calls 4)
+             (error "You can check out any time you'd like, but you can never
+                    leave")) )))
+
+(define (sproul-hall-exit)
+  (define calls 0)
+  (set! calls (+ calls 1))
+  (if (< calls 4) (error "You can check out any time you'd like, but you can never leave")) )
+
+(define (sproul-hall-exit)
+  (define calls 0)
+  (define dispatch (
+                    (set! calls (+ calls 1))
+                    (if (< calls 4) (error "You can check out any time you'd like, but you can never leave")) ))
+  dispatch)
+
+(define (sproul-hall-exit)
+  (define calls 0)
+  (define dispatch (
+                    (set! calls (+ calls 1))
+                    (if (< calls 4) (error "You can check out any time you'd like, but you can never leave")) ))
+  (lambda () (dispatch)))
+
+;working version
+(define sproul-hall-exit
+  (let ((calls 0))
+    (lambda ()
+      (begin (set! calls (+ calls 1))
+           (if (< calls 4)
+             (error "You can check out any time you'd like, but you can never
+                    leave")) ))))
 
 (define (bh-office-exit)
   (print "What's your favorite programming language?")

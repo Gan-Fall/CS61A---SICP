@@ -25,6 +25,7 @@
   (method (enter new-person)
     (if (memq new-person people)
 	(error "Person already in this place" (list name new-person)))
+    (for-each (lambda (person) (ask person 'notice new-person)) people)
     (set! people (cons new-person people))
     (for-each (lambda (proc) (proc)) entry-procs)
     'appeared)
