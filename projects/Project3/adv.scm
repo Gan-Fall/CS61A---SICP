@@ -9,6 +9,7 @@
    (people '())
    (entry-procs '())
    (exit-procs '()))
+  (method (may-enter? person) #t)
   (method (type) 'place)
   (method (neighbors) (map cdr directions-and-neighbors))
   (method (exits) (map car directions-and-neighbors))
@@ -61,6 +62,12 @@
     (set! entry-procs '())
     'cleared) )
 
+(define-class (locked-place child-name)
+  (parent (place child-name))
+  (instance-vars (unlocked? #f))
+  (method (unlock) (set! unlocked? #t))
+  (method (may-enter? person) unlocked?) )
+
 (define-class (person name place)
   (instance-vars
    (possessions '())
@@ -107,6 +114,8 @@
     (let ((new-place (ask place 'look-in direction)))
       (cond ((null? new-place)
 	     (error "Can't go" direction))
+        ((not (ask new-place 'may-enter? self))
+         (error (ask new-place 'name) " is locked"))
 	    (else
 	     (ask place 'exit self)
 	     (announce-move name place new-place)
