@@ -62,8 +62,8 @@
     (set! entry-procs '())
     'cleared) )
 
-(define-class (locked-place child-name)
-  (parent (place child-name))
+(define-class (locked-place init-name)
+  (parent (place init-name))
   (instance-vars (unlocked? #f))
   (method (unlock) (set! unlocked? #t))
   (method (may-enter? person) unlocked?) )
