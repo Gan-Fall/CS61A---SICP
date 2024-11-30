@@ -77,6 +77,23 @@
   (method (unlock) (set! unlocked? #t))
   (method (may-enter? person) unlocked?) )
 
+(define-class (hotspot init-name password)
+  (parent (place init-name))
+  (instance-vars (devices '()))
+  (method (connect laptop pass)
+    (cond ((not (memq laptop (ask self 'things))) (error "laptop not in hotspot")) 
+          ((equal? pass password) (set! devices (cons laptop devices)))
+          (else (error "Password is incorrect")) ))
+  (method (gone thing)
+    (begin (usual 'gone thing)
+    (if (memq thing devices)
+      (set! devices (delete thing devices)) )
+    'disappeared))
+  (method (surf laptop url)
+    (if (memq laptop devices)
+      (system (string-append "lynx " url))
+      (error "laptop not connected to wi-fi"))) )
+
 (define-class (person name place)
   (parent (basic-object))
   (instance-vars
@@ -180,6 +197,12 @@
 	    dispatch)))
        (else (error "Bad message to class" class-message))))))
 
+(define-class (laptop laptop-name)
+  (parent (thing laptop-name))
+  (method (connect password)
+    (ask (ask (ask self 'possessor) 'place) 'connect self password))
+  (method (surf url)
+    (ask (ask (ask self 'possessor) 'place) 'surf self url)) )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Implementation of thieves for part two
