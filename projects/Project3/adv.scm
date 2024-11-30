@@ -19,6 +19,7 @@
    (exit-procs '()))
   (method (may-enter? person) #t)
   (method (type) 'place)
+  (method (place?) #t)
   (method (neighbors) (map cdr directions-and-neighbors))
   (method (exits) (map car directions-and-neighbors))
   (method (look-in direction)
@@ -85,6 +86,7 @@
    (ask self 'put 'strength 50)
    (ask place 'enter self))
   (method (type) 'person)
+  (method (person?) #t)
   (method (look-around)
     (map (lambda (obj) (ask obj 'name))
 	 (filter (lambda (thing) (not (eq? thing self)))
@@ -167,6 +169,7 @@
 	       ((eq? message 'name) (lambda () name))
 	       ((eq? message 'possessor) (lambda () possessor))
 	       ((eq? message 'type) (lambda () 'thing))
+	       ((eq? message 'thing?) (lambda () #t))
 	       ((eq? message 'change-possessor)
 		(lambda (new-possessor)
 		  (set! possessor new-possessor)))
@@ -264,8 +267,12 @@
 
 (define (person? obj)
   (and (procedure? obj)
-       (member? (ask obj 'type) '(person police thief))))
+       (ask obj 'person?)))
 
 (define (thing? obj)
   (and (procedure? obj)
-       (eq? (ask obj 'type) 'thing)))
+       (ask obj 'thing?)))
+
+(define (place? obj)
+  (and (procedure? obj)
+       (ask obj 'place?)))
