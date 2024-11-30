@@ -2,7 +2,15 @@
 ;; This file contains the definitions for the objects in the adventure
 ;; game and some utility procedures.
 
+(define-class (basic-object)
+  (instance-vars (properties (make-table)))
+  (method (put key value)
+    (insert! key value properties))
+  (default-method
+    (lookup message properties)) )
+
 (define-class (place name)
+  (parent (basic-object))
   (instance-vars
    (directions-and-neighbors '())
    (things '())
@@ -69,10 +77,12 @@
   (method (may-enter? person) unlocked?) )
 
 (define-class (person name place)
+  (parent (basic-object))
   (instance-vars
    (possessions '())
    (saying ""))
   (initialize
+   (ask self 'put 'strength 50)
    (ask place 'enter self))
   (method (type) 'person)
   (method (look-around)
@@ -139,21 +149,31 @@
       (cond
        ((eq? class-message 'instantiate)
 	(lambda (name)
-	  (let ((self '()) (possessor 'no-one))
+	  (let ((self '())
+            (possessor 'no-one)
+            (my-basic-object (instantiate-parent basic-object)))
 	    (define (dispatch message)
 	      (cond
 	       ((eq? message 'initialize)
 		(lambda (value-for-self)
-		  (set! self value-for-self)))
+		  (set! self value-for-self)
+          (ask my-basic-object 'initialize self)))
 	       ((eq? message 'send-usual-to-parent)
-		(error "Can't use USUAL without a parent." 'thing))
+              (lambda (message . args)
+                (let ((method (get-method 'thing message my-basic-object)))
+                  (if (method? method)
+                    (apply method args)
+                    (error "No USUAL method" message 'thing))) ))
 	       ((eq? message 'name) (lambda () name))
 	       ((eq? message 'possessor) (lambda () possessor))
 	       ((eq? message 'type) (lambda () 'thing))
 	       ((eq? message 'change-possessor)
 		(lambda (new-possessor)
 		  (set! possessor new-possessor)))
-	       (else (no-method 'thing))))
+	       (else (let ((method (get-method 'thing message my-basic-object)))
+                   (if (method? method)
+                     method
+                     (lambda args 'sorry))))))
 	    dispatch)))
        (else (error "Bad message to class" class-message))))))
 
