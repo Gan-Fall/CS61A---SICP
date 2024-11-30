@@ -125,7 +125,13 @@
 		(ask new-place 'appear p))
 	      possessions)
 	     (set! place new-place)
-	     (ask new-place 'enter self))))) )
+	     (ask new-place 'enter self)))))
+  (method (take-all) (begin
+                       (map (lambda (item)
+                              (if (equal? 'no-one (ask item 'possessor))
+                                (ask self 'take item)))
+                            (ask place 'things))
+                       'done)) )
 
 (define thing
   (let ()
