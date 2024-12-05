@@ -1,0 +1,58 @@
+#+title: Exercise 3.21
+* Answer
+Ben's idea of proper format for a print-queue can be achieved by just taking the front pointer.
+However the Lisp interpreter's output is the most accurate view at how the structure itself
+works in the Lisp implementation. A queue can be thought of as a backbone with just one
+pair, front-ptr and rear-ptr. These pointers point at the first and last pair in a sequence
+respectively, this underlying sequence/list is what ben perceives as "the queue".
+
+The default Lisp interpreter output shows you the backbone itself. When the delete-queue!
+procedure takes the last cdr in the sequence, the front-ptr is pointing at the NULL at the
+end of the sequence, the rest of the pairs in the sequence which can be assumed to have
+been erased by the Lisp memory management if it treats pairs like it does environments
+(where if it can prove that nothing points to it the memory is freed). Point is, that
+the last pair remains, even though the front-ptr points to the NULL cdr of the pair,
+rear-ptr still points at the entire pair which includes 'b in this case. Since
+something is still pointing to this memory Lisp doesn't free the pair storing NULL
+alone. If we let it, it would violate our queue abstraction.
+
+* Sharing
+In the Stlk OS interpreter I use, it explicitly detects and shows sharing:
+(insert-queue! q1 'a)
+(#0=(a) . #0#)
+(insert-queue! q1 'b)
+((a . #0=(b)) . #0#)
+
+Here you can see it denotes that one of the items in the queue is equal
+to the ptr variable #0#, and the rear-ptr is also equal to #0# meaning
+they point to the same 'b or 'a.
+
+* Test
+Here is the full transcript of my test:
+
+(define q1 (make-queue))
+;; q1
+
+(insert-queue! q1 'a)
+(#0=(a) . #0#)
+
+(print-queue q1)
+(a)
+
+(insert-queue! q1 'b)
+((a . #0=(b)) . #0#)
+
+(print-queue q1)
+(a b)
+
+(delete-queue! q1)
+(#0=(b) . #0#)
+
+(print-queue q1)
+(b)
+
+(delete-queue! q1)
+(() b)
+
+(print-queue q1)
+()
