@@ -559,3 +559,8 @@ points out that C isn't OOP at all (at least as of spring 2011):
 
 Rows 1 and 3 are equivalents to "First-class procedures" and "Automatic
 memory allocation" respectively.
+
+Another cool thing about the video is how he gives a high level overview of how
+object oriented programming works at the processor level. In the processor's
+architecture it jumps from object to object, and each object knows where variables
+might be found.
