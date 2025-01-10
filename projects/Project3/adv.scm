@@ -139,6 +139,23 @@
   (method (set-talk string) (set! saying string))
   (method (exits) (ask place 'exits))
   (method (notice person) (ask self 'talk))
+  (method (eat)
+    (let ((strength (ask self 'strength))
+          (food-items (filter (lambda (possession)
+                                (ask possession 'edible?))
+                              possessions)))
+      (if (null? food-items)
+        '(nothing to eat)
+        (begin (ask self 'put 'strength (+ strength
+                                           (accumulate + 0
+                                             (map (lambda (item)
+                                                    (ask item 'calories))
+                                                  food-items))))
+               (map (lambda (meal)
+                      (begin (ask self 'lose meal)
+                             (ask place 'gone meal)))
+                    food-items)
+               'ate) )))
   (method (go direction)
     (let ((new-place (ask place 'look-in direction)))
       (cond ((null? new-place)
@@ -210,7 +227,7 @@
 (define *foods* '(pizza potstickers coffee))
 
 (define (edible? thing)
-  (member? (ask thing 'name) *foods*))
+  (ask thing 'edible?))
 
 (define-class (thief name initial-place)
   (parent (person name initial-place))
