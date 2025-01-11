@@ -172,6 +172,33 @@
 	      possessions)
 	     (set! place new-place)
 	     (ask new-place 'enter self)))))
+  ;;(method (go-directly-to new-place)
+    ;;(cond ((null? new-place) (error "Can't go directly to" place))
+          ;;((not (ask new-place 'may-enter? self))
+          ;;(error (ask new-place 'name) " is locked"))
+          ;;(else
+            ;;(ask place 'exit self)
+            ;;(announce-move name place new-place)
+            ;;(for-each
+              ;;(lambda (p)
+                ;;(ask place 'gone p)
+                ;;(ask new-place 'appear p))
+              ;;possessions)
+            ;;(set! place new-place)
+            ;;(ask new-place 'enter self)) ))
+  (method (go-directly-to new-place)
+    (cond ((null? new-place) (error "Can't go directly to" place))
+          ((not (ask new-place 'may-enter? self))
+          (error (ask new-place 'name) " is locked"))
+          (else
+            (announce-move name place new-place)
+            (for-each
+              (lambda (p)
+                (ask place 'gone p)
+                (ask new-place 'appear p))
+              possessions)
+            (set! place new-place)
+            (ask new-place 'enter self)) ))
   (method (take-all) (begin
                        (map (lambda (item)
                               (if (equal? 'no-one (ask item 'possessor))
@@ -233,11 +260,15 @@
   (parent (person name initial-place))
   (instance-vars
    (behavior 'steal))
+  (initialize
+   (ask self 'put 'strength 75))
   (method (type) 'thief)
-
   (method (notice person)
     (if (eq? behavior 'run)
-	(ask self 'go (pick-random (ask (usual 'place) 'exits)))
+      (let ((chosen-exit (pick-random (ask (usual 'place) 'exits))))
+        (if chosen-exit
+          (ask self 'go chosen-exit)
+          '(NO EXITS)))
 	(let ((food-things
 	       (filter (lambda (thing)
 			 (and (edible? thing)
@@ -249,6 +280,19 @@
 	       (set! behavior 'run)
 	       (ask self 'notice person)) )))) )
 
+(define-class (police name initial-place)
+  (parent (person name initial-place))
+  (initialize
+   (ask self 'put 'strength 100))
+  (method (type) 'police)
+  (method (notice person)
+    (if (eq? (ask person 'type) 'thief)
+      (begin (ask self 'set-talk "Crime Does Not Pay")
+             (ask self 'talk)
+             (map (lambda (possession)
+                    (ask self 'take possession))
+                  (ask person 'possessions))
+             (ask person 'go-directly-to jail) ) )) )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility procedures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -297,8 +341,11 @@
   (newline))
 
 
+;;(define (pick-random set)
+  ;;(nth (random (length set)) set))
+
 (define (pick-random set)
-  (nth (random (length set)) set))
+  (list-ref set (random (length set))))
 
 (define (delete thing stuff)
   (cond ((null? stuff) '())
