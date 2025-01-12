@@ -114,23 +114,49 @@
 	   (error "Thing taken not at this place"
 		  (list (ask place 'name) thing)))
 	  ((memq thing possessions) (error "You already have it!"))
-	  (else
-	   (announce-take name thing)
-	   (set! possessions (cons thing possessions))
-	       
+	  ((eq? (ask thing 'possessor) 'no-one)
+	     (announce-take name thing)
+	     (set! possessions (cons thing possessions))
+         (ask thing 'change-possessor self)
+	     'taken)
 	   ;; If somebody already has this object...
+       ((memq (ask thing 'possessor) (ask place 'people))
+       ;;(newline)
+       ;;(display "Taken - PEOPLE IN AREA")
+       ;;(display (ask place 'people))
+       ;;(newline)
 	   (for-each
 	    (lambda (pers)
 	      (if (and (not (eq? pers self)) ; ignore myself
-		       (memq thing (ask pers 'possessions)))
+		       (memq thing (ask pers 'possessions))
+               (ask thing 'may-take? self))
 		  (begin
+	       (announce-take name thing)
+           (set! possessions (cons thing possessions))
 		   (ask pers 'lose thing)
-		   (have-fit pers))))
-	    (ask place 'people))
-	       
-	   (ask thing 'change-possessor self)
-	   'taken)))
-
+		   (have-fit pers)
+           (ask thing 'change-possessor self)
+           'taken)))
+	    (ask place 'people)))
+       (else
+         (let ((pers (ask thing 'possessor)))
+         (if (ask thing 'may-take? self)
+           (begin
+	         (announce-take name thing)
+             (set! possessions (cons thing possessions))
+		     (ask pers 'lose thing)
+		     (have-fit pers)
+             (ask thing 'change-possessor self))
+           (begin
+             (newline)
+             (display "Too weak to steal ")
+             (display (ask thing 'name))
+             (display "from ")
+             (display pers)
+             (newline)
+             (display (ask pers 'strength))
+             (display " vs ")
+             (display (ask self 'strength))) ))) ))
   (method (lose thing)
     (set! possessions (delete thing possessions))
     (ask thing 'change-possessor 'no-one)
@@ -172,20 +198,6 @@
 	      possessions)
 	     (set! place new-place)
 	     (ask new-place 'enter self)))))
-  ;;(method (go-directly-to new-place)
-    ;;(cond ((null? new-place) (error "Can't go directly to" place))
-          ;;((not (ask new-place 'may-enter? self))
-          ;;(error (ask new-place 'name) " is locked"))
-          ;;(else
-            ;;(ask place 'exit self)
-            ;;(announce-move name place new-place)
-            ;;(for-each
-              ;;(lambda (p)
-                ;;(ask place 'gone p)
-                ;;(ask new-place 'appear p))
-              ;;possessions)
-            ;;(set! place new-place)
-            ;;(ask new-place 'enter self)) ))
   (method (go-directly-to new-place)
     (cond ((null? new-place) (error "Can't go directly to" place))
           ((not (ask new-place 'may-enter? self))
@@ -231,6 +243,13 @@
 	       ((eq? message 'possessor) (lambda () possessor))
 	       ((eq? message 'type) (lambda () 'thing))
 	       ((eq? message 'thing?) (lambda () #t))
+	       ((eq? message 'may-take?)
+              (lambda (receiver)
+                (let ((attacker (ask receiver 'strength))
+                      (defender (ask possessor 'strength)))
+                  (if (> attacker defender)
+                    self
+                    #f) )))
 	       ((eq? message 'change-possessor)
 		(lambda (new-possessor)
 		  (set! possessor new-possessor)))
@@ -269,16 +288,16 @@
         (if chosen-exit
           (ask self 'go chosen-exit)
           '(NO EXITS)))
-	(let ((food-things
-	       (filter (lambda (thing)
-			 (and (edible? thing)
-			      (not (eq? (ask thing 'possessor) self))))
-		       (ask (usual 'place) 'things))))
-	  (if (not (null? food-things))
-	      (begin
-	       (ask self 'take (car food-things))
-	       (set! behavior 'run)
-	       (ask self 'notice person)) )))) )
+      (let ((food-things
+              (filter (lambda (thing)
+                        (and (edible? thing)
+                             (not (eq? (ask thing 'possessor) self))))
+                      (ask (usual 'place) 'things))))
+        (if (not (null? food-things))
+          (begin
+            (ask self 'take (car food-things))
+            (set! behavior 'run)
+            (ask self 'notice person)) )))) )
 
 (define-class (police name initial-place)
   (parent (person name initial-place))
@@ -363,3 +382,38 @@
 (define (place? obj)
   (and (procedure? obj)
        (ask obj 'place?)))
+
+;;Alternate functions
+;; Person
+;; Specifically request to take the thing from person's inventory
+;; Backup in case previous version is glitchy
+       ;;(else 
+	   ;;(for-each
+	    ;;(lambda (pers)
+	      ;;(let ((owned-thing (memq thing (ask pers 'possessions))))
+             ;;(if (and (not (eq? pers self)) ; ignore myself
+                      ;;owned-thing
+                      ;;(ask owned-thing 'may-take? self))
+               ;;(begin
+	           ;;(announce-take name ownend-thing)
+               ;;(set! possessions (cons ownend-thing possessions))
+		       ;;(ask pers 'lose ownend-thing)
+		       ;;(have-fit pers)
+               ;;(ask ownend-thing 'change-possessor self)
+               ;;'taken))))
+	    ;;(ask place 'people)) )))
+
+  ;;(method (go-directly-to new-place)
+    ;;(cond ((null? new-place) (error "Can't go directly to" place))
+          ;;((not (ask new-place 'may-enter? self))
+          ;;(error (ask new-place 'name) " is locked"))
+          ;;(else
+            ;;(ask place 'exit self)
+            ;;(announce-move name place new-place)
+            ;;(for-each
+              ;;(lambda (p)
+                ;;(ask place 'gone p)
+                ;;(ask new-place 'appear p))
+              ;;possessions)
+            ;;(set! place new-place)
+            ;;(ask new-place 'enter self)) ))
