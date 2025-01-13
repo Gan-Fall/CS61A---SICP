@@ -77,6 +77,26 @@
   (method (unlock) (set! unlocked? #t))
   (method (may-enter? person) unlocked?) )
 
+(define-class (restaurant init-name specialty price)
+  (parent (place init-name))
+  (instance-vars (menu '()))
+  (initialize (set! menu (cons (cons specialty price)
+                               menu)))
+  ;; We'll assume for now that a restaurants' specialty is always
+  ;; the only item in the menu
+  (method (sell customer food)
+    (let ((menu-items (filter (lambda (menu-item)
+                                (eq? (car menu-item) food))
+                              (ask self 'menu))))
+      (if (and (not (null? menu-items))
+               (ask customer 'pay-money (cdar menu-items)))
+          ;;500 is a placeholder for calories
+        (let ((food-item (instantiate food 500)))
+          (begin
+            (ask self 'appear food-item)
+            (ask customer 'take food-item)))
+        #f))) )
+
 (define-class (hotspot init-name password)
   (parent (place init-name))
   (instance-vars (devices '()))
@@ -101,6 +121,7 @@
    (saying ""))
   (initialize
    (ask self 'put 'strength 50)
+   (ask self 'put 'money 100)
    (ask place 'enter self))
   (method (type) 'person)
   (method (person?) #t)
@@ -216,7 +237,15 @@
                               (if (equal? 'no-one (ask item 'possessor))
                                 (ask self 'take item)))
                             (ask place 'things))
-                       'done)) )
+                       'done))
+  (method (get-money amount) (ask self 'put 'money (+ amount
+                                                      (ask self 'money))))
+  (method (pay-money amount) (if (>= (ask self 'money) amount)
+                               (begin
+                                 (ask self 'put 'money (- (ask self 'money)
+                                                          amount))
+                                 #t)
+                               #f)) )
 
 (define thing
   (let ()
