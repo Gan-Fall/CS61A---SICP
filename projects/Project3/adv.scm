@@ -85,17 +85,16 @@
   ;; We'll assume for now that a restaurants' specialty is always
   ;; the only item in the menu
   (method (sell customer food)
-    (let ((menu-items (filter (lambda (menu-item)
-                                (eq? (car menu-item) food))
-                              (ask self 'menu))))
-      (if (and (not (null? menu-items))
-               (ask customer 'pay-money (cdar menu-items)))
-          ;;500 is a placeholder for calories
-        (let ((food-item (instantiate food 500)))
-          (begin
-            (ask self 'appear food-item)
-            (ask customer 'take food-item)))
-        #f))) )
+          (let ((menu-items (filter (lambda (menu-item)
+                                      (eq? (car menu-item) food))
+                                    (ask self 'menu))))
+            (cond ((null? menu-items) #f)
+                  ((or (eq? 'police
+                            (ask customer 'type))
+                       (ask customer 'pay-money (cdar menu-items)))
+                   ;;500 is a placeholder for calories
+                   (instantiate food 500))
+                  (else #f)))) )
 
 (define-class (hotspot init-name password)
   (parent (place init-name))
@@ -245,7 +244,19 @@
                                  (ask self 'put 'money (- (ask self 'money)
                                                           amount))
                                  #t)
-                               #f)) )
+                               #f))
+  (method (buy food-name)
+    (let* ((menu (ask (ask self 'place) 'menu))
+           (menu-items (filter (lambda (menu-item)
+                                 (eq? (ask (car menu-item) 'name) food-name))
+                               menu))
+           (purchase (if (not (null? menu-items))
+                       (ask place 'sell self (caar menu-items))
+                       #f)) )
+      (if purchase
+        (begin (ask place 'appear purchase)
+               (ask self 'take purchase))
+        #f) )) )
 
 (define thing
   (let ()
