@@ -1,0 +1,5 @@
+(load "simply.scm")
+(load "libraries/obj.scm")
+(load "projects/Project3/adv.scm")
+(load "projects/Project3/tables.scm")
+(load "projects/Project3/adv-world.scm")
