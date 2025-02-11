@@ -1,0 +1,11 @@
+(define (fract-stream fraction)
+  (cons-stream (quotient (* 10 (car fraction)) (cadr fraction))
+               (fract-stream (list (remainder (* (car fraction) 10)
+                                              (cadr fraction))
+                                   (cadr fraction)) )))
+
+(define (approximation s numdigits)
+  (if (= numdigits 0)
+    '()
+    (cons (stream-car s)
+          (approximation (stream-cdr s) (- numdigits 1))) ))
